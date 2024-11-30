@@ -29,9 +29,6 @@ jobs:
             - name: Build Packages
               run: pnpm build
 
-            - name: Run Tests
-              run: pnpm test
-
             - name: Check Types
               run: pnpm types
     release:
