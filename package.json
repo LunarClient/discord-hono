@@ -17,6 +17,7 @@
   "main": "dist/index.js",
   "scripts": {
     "build": "tsup src/index.ts --format esm --target es2022 --dts --clean",
+    "types": "tsc --noEmit",
 		"changeset": "changeset",
 		"version-packages": "changeset version",
 		"release": "pnpm build && changeset publish",
