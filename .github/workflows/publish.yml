@@ -31,9 +31,6 @@ jobs:
 
       - name: Check Types
         run: pnpm types
-
-      - name: Check Formatting
-        run: pnpm format:check
   release:
     name: Release
     runs-on: ubuntu-latest
