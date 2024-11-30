@@ -59,22 +59,6 @@ export type InitOptions<E extends Env> = {
   discordEnv?: (env: E['Bindings']) => DiscordEnv
 }
 
-////////// CronEvent //////////
-// https://developers.cloudflare.com/workers/runtime-apis/handlers/scheduled/#syntax
-
-export type CronEvent = {
-  cron: string
-  type: string
-  scheduledTime: number
-}
-
-////////// ExecutionContext //////////
-
-export interface ExecutionContext {
-  waitUntil(promise: Promise<unknown>): void
-  passThroughOnException(): void
-}
-
 ////////// FetchEventLike //////////
 
 export abstract class FetchEventLike {

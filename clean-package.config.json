@@ -1,0 +1,19 @@
+{
+	"replace": {
+		"main": "./dist/molang.umd.js",
+		"module": "./dist/molang.es.js",
+		"types": "./dist/main.d.ts",
+		"exports": {
+			".": {
+				"types": "./dist/main.d.ts",
+				"import": "./dist/molang.es.js",
+				"require": "./dist/molang.umd.js"
+			}
+		},
+		"typesVersions": {
+			"*": {
+				"*": ["./dist/*", "./dist/main.d.ts"]
+			}
+		}
+	}
+}

@@ -6,10 +6,8 @@ import type {
 } from 'discord-api-types/v10'
 import { AutocompleteContext, CommandContext, ComponentContext, CronContext, ModalContext } from './context'
 import type {
-  CronEvent,
   DiscordEnv,
   Env,
-  ExecutionContext,
   InitOptions,
   InteractionCommandData,
   InteractionComponentData,
@@ -108,7 +106,7 @@ abstract class DiscordHonoBase<E extends Env> {
    * @param executionCtx
    * @returns {Promise<Response>}
    */
-  fetch = async (request: Request, env?: E['Bindings'], executionCtx?: ExecutionContext) => {
+  fetch = async (request: Request, env?: E['Bindings'], ctx?: ExecutionContext) => {
     switch (request.method) {
       case 'GET':
         return new Response('powered by Discord Hono🔥')
@@ -134,14 +132,14 @@ abstract class DiscordHonoBase<E extends Env> {
               this.#commandMap,
               interaction.data?.name.toLowerCase(),
             )
-            return await handler(new CommandContext(request, env, executionCtx, discord, interaction, key))
+            return await handler(new CommandContext(request, env, ctx, discord, interaction, key))
           }
           case 3: {
             const { handler, interaction, key } = getHandler<ComponentHandler<E>>(
               this.#componentMap,
               data as InteractionComponentData,
             )
-            return await handler(new ComponentContext(request, env, executionCtx, discord, interaction, key))
+            return await handler(new ComponentContext(request, env, ctx, discord, interaction, key))
           }
           case 4: {
             const interaction = data as APIApplicationCommandAutocompleteInteraction
@@ -149,14 +147,14 @@ abstract class DiscordHonoBase<E extends Env> {
               this.#autocompleteMap,
               interaction.data?.name.toLowerCase(),
             )
-            return await handler(new AutocompleteContext(request, env, executionCtx, discord, interaction, key))
+            return await handler(new AutocompleteContext(request, env, ctx, discord, interaction, key))
           }
           case 5: {
             const { handler, interaction, key } = getHandler<ModalHandler<E>>(
               this.#modalMap,
               data as InteractionModalData,
             )
-            return await handler(new ModalContext(request, env, executionCtx, discord, interaction, key))
+            return await handler(new ModalContext(request, env, ctx, discord, interaction, key))
           }
           default: {
             console.error(`interaction.type: ${data.type}\nNot yet implemented`)
@@ -175,7 +173,7 @@ abstract class DiscordHonoBase<E extends Env> {
    * @param {Record<string, unknown>} env
    * @param executionCtx
    */
-  scheduled = async (event: CronEvent, env: E['Bindings'], executionCtx?: ExecutionContext) => {
+  scheduled = async (event: ScheduledEvent, env: E['Bindings'], executionCtx?: ExecutionContext) => {
     const discord = this.#discord(env)
     const { handler, key } = getHandler<CronHandler<E>>(this.#cronMap, event.cron)
     const c = new CronContext(event, env, executionCtx, discord, key)

@@ -1,6 +1,6 @@
 {
-  "name": "discord-hono",
-  "version": "0.8.5",
+  "name": "@lunarclient/discord-hono",
+  "version": "0.0.1",
   "description": "This module enables you to easily build a Discord Bot that runs on Cloudflare workers",
   "author": "Luis (https://github.com/luisfun)",
   "homepage": "https://github.com/luisfun/discord-hono",
@@ -16,19 +16,20 @@
   "type": "module",
   "main": "dist/index.js",
   "scripts": {
-    "fix": "biome check --write . && tsc",
-    "fix:unsafe": "biome check --write --unsafe . && tsc",
-    "build": "tsup src/index.ts --format esm --target es2022 --dts --clean && attw -P . --ignore-rules cjs-resolves-to-esm",
-    "patch": "npm run fix && npm run build && npm version patch && git push --follow-tags",
-    "minor": "npm run fix && npm run build && npm version minor && git push --follow-tags",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "tsup src/index.ts --format esm --target es2022 --dts --clean",
+		"changeset": "changeset",
+		"version-packages": "changeset version",
+		"release": "pnpm build && changeset publish",
+		"prepack": "clean-package",
+		"postpack": "clean-package restore"
   },
   "devDependencies": {
-    "@arethetypeswrong/cli": "^0.15.3",
-    "@biomejs/biome": "1.8.3",
+    "@changesets/cli": "^2.27.1",
+    "@cloudflare/workers-types": "^4.20241127.0",
     "@discordjs/builders": "^1.8.2",
     "discord-api-types": "^0.37.93",
     "tsup": "^8.2.4",
-    "typescript": "^5.5.4"
+    "typescript": "^5.5.4",
+		"clean-package": "^2.2.0"
   }
 }

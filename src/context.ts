@@ -19,11 +19,9 @@ import type {
 } from 'discord-api-types/v10'
 import type { Autocomplete, Modal } from './builder'
 import type {
-  CronEvent,
   CustomCallbackData,
   DiscordEnv,
   Env,
-  ExecutionContext,
   FetchEventLike,
   FileData,
   InteractionCommandData,
@@ -464,8 +462,8 @@ export class AutocompleteContext<E extends Env = any> extends Context2345<E, Int
 }
 
 export class CronContext<E extends Env = any> extends ContextAll<E> {
-  #cronEvent: CronEvent
-  constructor(event: CronEvent, env: E['Bindings'], executionCtx: ExecutionCtx, discord: DiscordEnv, key: string) {
+  #cronEvent: ScheduledEvent
+  constructor(event: ScheduledEvent, env: E['Bindings'], executionCtx: ExecutionCtx, discord: DiscordEnv, key: string) {
     super(env, executionCtx, discord, key)
     this.#cronEvent = event
   }
@@ -473,7 +471,7 @@ export class CronContext<E extends Env = any> extends ContextAll<E> {
   /**
    * Cron Event
    */
-  get cronEvent(): CronEvent {
+  get cronEvent(): ScheduledEvent {
     return this.#cronEvent
   }
 }
