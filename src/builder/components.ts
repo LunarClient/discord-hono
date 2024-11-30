@@ -224,8 +224,8 @@ export class Select<
             : "user" | "role";
         }[]
   ) =>
-    // @ts-expect-error
     this.#assign("default_values", ["User", "Role", "Channel", "Mentionable"], {
+      // @ts-expect-error
       default_values: e,
     });
   /**
