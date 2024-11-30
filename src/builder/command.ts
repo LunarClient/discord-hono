@@ -238,7 +238,6 @@ export class Option<
    * @returns {this}
    */
   choices = (
-    // biome-ignore format: ternary operator
     ...e: T extends "String"
       ? APIApplicationCommandOptionChoice<string>[]
       : T extends "Integer" | "Number"
@@ -256,8 +255,8 @@ export class Option<
    * @returns {this}
    */
   channel_types = (...e: T extends "Channel" ? ChannelType[] : undefined[]) =>
-    // @ts-expect-error
     this.#assign("channel_types", ["Channel"], {
+      // @ts-expect-error
       channel_types: e as ChannelType[],
     });
   /**

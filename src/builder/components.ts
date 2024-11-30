@@ -210,7 +210,6 @@ export class Select<
    * @returns {this}
    */
   default_values = (
-    // biome-ignore format: ternary operator
     ...e: T extends "String"
       ? undefined[]
       : {

@@ -130,7 +130,6 @@ abstract class ContextAll<E extends Env> {
   }
 }
 
-// biome-ignore format: ternary operator
 type InteractionData<T extends 2 | 3 | 4 | 5> = T extends 2
   ? InteractionCommandData
   : T extends 3
@@ -174,7 +173,6 @@ abstract class Context2345<
 }
 
 type InteractionCallbackType = 1 | 4 | 5 | 6 | 7 | 9 | 10;
-// biome-ignore format: ternary operator
 type InteractionCallbackData<T extends InteractionCallbackType> = T extends
   | 4
   | 7
@@ -371,7 +369,7 @@ export class CommandContext<E extends Env = any> extends Context235<
 }
 
 type ComponentType = "Button" | "Select" | "Other Select" | unknown;
-// biome-ignore format: ternary operator
+
 type ComponentInteractionData<T extends ComponentType> = T extends "Button"
   ? APIBaseInteraction<
       InteractionType.MessageComponent,
