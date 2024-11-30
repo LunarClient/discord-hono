@@ -1,7 +1,7 @@
-import type { SlashCommandBuilder } from '@discordjs/builders'
-import type { Command } from '../builder/command'
-import type { ApplicationCommand } from '../types'
-import { apiUrl, errorDev } from '../utils'
+import type { SlashCommandBuilder } from "@discordjs/builders";
+import type { Command } from "../builder/command";
+import type { ApplicationCommand } from "../types";
+import { apiUrl, errorDev } from "../utils";
 
 // cloudflare-sample-app
 // Copyright (c) 2022 Justin Beckwith
@@ -18,37 +18,39 @@ export const register = async (
   commands: (Command | SlashCommandBuilder | ApplicationCommand)[],
   application_id: string | undefined,
   token: string | undefined,
-  guild_id?: string | undefined,
+  guild_id?: string | undefined
 ) => {
-  if (!token) throw errorDev('DISCORD_TOKEN')
-  if (!application_id) throw errorDev('DISCORD_APPLICATION_ID')
+  if (!token) throw errorDev("DISCORD_TOKEN");
+  if (!application_id) throw errorDev("DISCORD_APPLICATION_ID");
 
   const url = guild_id
     ? `${apiUrl}/applications/${application_id}/guilds/${guild_id}/commands`
-    : `${apiUrl}/applications/${application_id}/commands`
-  const body = JSON.stringify(commands.map(cmd => ('toJSON' in cmd ? cmd.toJSON() : cmd)))
+    : `${apiUrl}/applications/${application_id}/commands`;
+  const body = JSON.stringify(
+    commands.map((cmd) => ("toJSON" in cmd ? cmd.toJSON() : cmd))
+  );
 
   const response = await fetch(url, {
     headers: {
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
       Authorization: `Bot ${token}`,
     },
-    method: 'PUT',
+    method: "PUT",
     body,
-  })
+  });
 
   if (response.ok) {
-    console.log('===== ✅ Success =====')
+    console.log("===== ✅ Success =====");
   } else {
-    let errorText = `Error registering commands\n${response.url}: ${response.status} ${response.statusText}`
+    let errorText = `Error registering commands\n${response.url}: ${response.status} ${response.statusText}`;
     try {
-      const error = await response.text()
+      const error = await response.text();
       if (error) {
-        errorText += `\n\n${error}`
+        errorText += `\n\n${error}`;
       }
     } catch (e) {
-      errorText += `\n\nError reading body from request:\n${e}`
+      errorText += `\n\nError reading body from request:\n${e}`;
     }
-    console.error(`${errorText}\n===== ⚠️ Error =====`)
+    console.error(`${errorText}\n===== ⚠️ Error =====`);
   }
-}
+};

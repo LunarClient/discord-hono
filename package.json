@@ -17,12 +17,14 @@
   "main": "dist/index.js",
   "scripts": {
     "build": "tsup src/index.ts --format esm --target es2022 --dts --clean",
+    "format:check": "prettier --check \"**/*.{ts,tsx}\" --cache",
+    "format:write": "prettier --write \"**/*.{ts,tsx}\" --cache",
     "types": "tsc --noEmit",
-		"changeset": "changeset",
-		"version-packages": "changeset version",
-		"release": "pnpm build && changeset publish",
-		"prepack": "clean-package",
-		"postpack": "clean-package restore"
+    "changeset": "changeset",
+    "version-packages": "changeset version",
+    "release": "pnpm build && changeset publish",
+    "prepack": "clean-package",
+    "postpack": "clean-package restore"
   },
   "devDependencies": {
     "@changesets/cli": "^2.27.1",
@@ -31,6 +33,7 @@
     "discord-api-types": "^0.37.93",
     "tsup": "^8.2.4",
     "typescript": "^5.5.4",
-		"clean-package": "^2.2.0"
+    "clean-package": "^2.2.0",
+    "prettier": "^3.1.0"
   }
 }
