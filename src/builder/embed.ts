@@ -5,7 +5,7 @@ export class Embed extends Builder<APIEmbed> {
   /**
    * [Embed Structure](https://discord.com/developers/docs/resources/message#embed-object)
    */
-  constructor(initial: APIEmbed) {
+  constructor(initial: APIEmbed = {}) {
     super(initial);
   }
   /**
