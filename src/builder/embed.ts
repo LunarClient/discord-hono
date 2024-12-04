@@ -5,8 +5,8 @@ export class Embed extends Builder<APIEmbed> {
   /**
    * [Embed Structure](https://discord.com/developers/docs/resources/message#embed-object)
    */
-  constructor() {
-    super({});
+  constructor(initial: APIEmbed) {
+    super(initial);
   }
   /**
    * @param {string} e Length limit: 256 characters
