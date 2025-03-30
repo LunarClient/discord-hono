@@ -50,6 +50,7 @@ abstract class DiscordHonoBase<E extends Env> {
   #autocompleteMap = new RegexMap<string | RegExp, AutocompleteHandler<E>>();
   #modalMap = new RegexMap<string | RegExp, ModalHandler<E>>();
   #cronMap = new RegexMap<string | RegExp, CronHandler<E>>();
+  #storedEnv?: E["Bindings"];
   /**
    * [Documentation](https://discord-hono.luis.fun/interactions/discord-hono/)
    * @param {InitOptions} options
@@ -120,15 +121,17 @@ abstract class DiscordHonoBase<E extends Env> {
 
   /**
    * Extends the current instance with another instance
-   * @param
-   * @returns
+   * @param app Another instance of DiscordHonoBase with any environment type
+   * @returns this
    */
-  extend = (app: this) => {
-    for (const e of app.#commandMap) this.#commandMap.set(...e);
-    for (const e of app.#componentMap) this.#componentMap.set(...e);
-    for (const e of app.#autocompleteMap) this.#autocompleteMap.set(...e);
-    for (const e of app.#modalMap) this.#modalMap.set(...e);
-    for (const e of app.#cronMap) this.#cronMap.set(...e);
+  extend = <T extends Env>(app: DiscordHonoBase<T>) => {
+    const typedApp = app as unknown as this;
+
+    for (const e of typedApp.#commandMap) this.#commandMap.set(...e);
+    for (const e of typedApp.#componentMap) this.#componentMap.set(...e);
+    for (const e of typedApp.#autocompleteMap) this.#autocompleteMap.set(...e);
+    for (const e of typedApp.#modalMap) this.#modalMap.set(...e);
+    for (const e of typedApp.#cronMap) this.#cronMap.set(...e);
 
     return this;
   };
@@ -144,13 +147,18 @@ abstract class DiscordHonoBase<E extends Env> {
     env?: E["Bindings"],
     ctx?: ExecutionContext
   ) => {
+    // Store the environment for later use
+    this.#storedEnv = env;
+
     switch (request.method) {
       case "GET":
         return new Response("powered by Discord Hono🔥");
       case "POST": {
         const discord = this.#discord(env);
-        if (!discord.PUBLIC_KEY) throw errorDev("DISCORD_PUBLIC_KEY");
-        // verify
+        if (!discord.PUBLIC_KEY) {
+          throw errorDev("DISCORD_PUBLIC_KEY");
+        }
+
         const body = await request.text();
         const signature = request.headers.get("x-signature-ed25519");
         const timestamp = request.headers.get("x-signature-timestamp");
@@ -160,10 +168,11 @@ abstract class DiscordHonoBase<E extends Env> {
           timestamp,
           discord.PUBLIC_KEY
         );
-        if (!isValid)
+
+        if (!isValid) {
           return new Response("Bad request signature.", { status: 401 });
-        // verify end
-        // ************ any 何とかしたい
+        }
+
         const data: APIBaseInteraction<InteractionType, any> = JSON.parse(body);
         switch (data.type) {
           case 1: {
@@ -230,7 +239,7 @@ abstract class DiscordHonoBase<E extends Env> {
   /**
    * Methods triggered by cloudflare workers' crons
    * @param event
-   * @param {Record<string, unknown>} env
+   * @param env
    * @param executionCtx
    */
   scheduled = async (
@@ -238,6 +247,9 @@ abstract class DiscordHonoBase<E extends Env> {
     env: E["Bindings"],
     executionCtx?: ExecutionContext
   ) => {
+    // Store the environment for later use
+    this.#storedEnv = env;
+
     const discord = this.#discord(env);
     const { handler, key } = getHandler<CronHandler<E>>(
       this.#cronMap,
@@ -250,20 +262,32 @@ abstract class DiscordHonoBase<E extends Env> {
       await handler(c);
     }
   };
+
+  /**
+   * Get the bindings for use outside of handlers
+   * No need to pass env parameter as it uses the stored bindings
+   * @returns Context object with bindings and Discord environment
+   */
+  getBindings = () => {
+    if (!this.#storedEnv) {
+      console.warn('Warning: getBindings() called before any handler received environment bindings');
+    }
+    return this.#storedEnv;
+  };
 }
 
 const getHandler = <
   H extends
-    | CommandHandler
-    | ComponentHandler
-    | ModalHandler
-    | AutocompleteHandler
-    | CronHandler,
+  | CommandHandler
+  | ComponentHandler
+  | ModalHandler
+  | AutocompleteHandler
+  | CronHandler,
   I extends
-    | string
-    | undefined
-    | InteractionComponentData
-    | InteractionModalData = any
+  | string
+  | undefined
+  | InteractionComponentData
+  | InteractionModalData = any
 >(
   map: RegexMap<string | RegExp, H>,
   interaction: I
@@ -281,4 +305,4 @@ const getHandler = <
   return { handler, interaction, key };
 };
 
-export class DiscordHono<E extends Env = Env> extends DiscordHonoBase<E> {}
+export class DiscordHono<E extends Env = Env> extends DiscordHonoBase<E> { }
