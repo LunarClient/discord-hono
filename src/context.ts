@@ -21,7 +21,6 @@ import type {
   CustomCallbackData,
   DiscordEnv,
   Env,
-  FetchEventLike,
   FileData,
   InteractionAutocompleteData,
   InteractionCommandData,
@@ -38,9 +37,8 @@ import {
   formData,
   prepareData,
 } from "./utils";
-import { ExecutionContext } from "@cloudflare/workers-types";
+import { ExecutionContext, Request, ScheduledEvent } from "@cloudflare/workers-types";
 
-type ExecutionCtx = FetchEventLike | ExecutionContext | undefined;
 
 // biome-ignore lint: Same definition as Hono
 type ContextVariableMap = {};
@@ -60,22 +58,23 @@ interface GetVar<E extends Env> {
 }
 type IsAny<T> = boolean extends (T extends never ? true : false) ? true : false;
 
-abstract class ContextAll<E extends Env> {
-  #env: E["Bindings"] = {};
-  #executionCtx: ExecutionCtx;
+abstract class ContextAll<E extends Env, R extends Request | ScheduledEvent = Request> {
   protected discord: DiscordEnv;
-  #key: string;
+  #context: ExecutionContext;
+  #event?: R;
   #var: E["Variables"] = {};
+  #env: E["Bindings"] = {};
+
   constructor(
+    event: R,
     env: E["Bindings"],
-    executionCtx: ExecutionCtx,
+    context: ExecutionContext,
     discord: DiscordEnv,
-    key: string
   ) {
+    this.#event = event;
     this.#env = env;
-    this.#executionCtx = executionCtx;
+    this.#context = context;
     this.discord = discord;
-    this.#key = key;
   }
 
   /**
@@ -84,25 +83,17 @@ abstract class ContextAll<E extends Env> {
   get env(): E["Bindings"] {
     return this.#env;
   }
-  get event(): FetchEventLike {
-    if (!(this.#executionCtx && "respondWith" in this.#executionCtx))
-      throw errorOther("FetchEvent");
-    return this.#executionCtx;
+
+  get event(): R {
+    if (!this.#event) throw errorOther("FetchEvent");
+    return this.#event;
   }
+
   get executionCtx(): ExecutionContext {
-    if (!this.#executionCtx) throw errorOther("ExecutionContext");
-    return this.#executionCtx;
+    if (!this.#context) throw errorOther("ExecutionContext");
+    return this.#context;
   }
-  get waitUntil(): ExecutionContext["waitUntil"] /*| FetchEventLike["waitUntil"]*/ {
-    if (!this.#executionCtx?.waitUntil) throw errorOther("waitUntil");
-    return this.#executionCtx.waitUntil.bind(this.#executionCtx);
-  }
-  /**
-   * Handler triggered string
-   */
-  get key(): string {
-    return this.#key;
-  }
+
   /**
    * @param {string} key
    * @param {unknown} value
@@ -143,28 +134,20 @@ type InteractionData<T extends 2 | 3 | 4 | 5> = T extends 2
 abstract class Context2345<
   E extends Env,
   D extends InteractionData<2 | 3 | 4 | 5>
-> extends ContextAll<E> {
-  #req: Request;
+> extends ContextAll<E, Request> {
   #interaction: D;
   constructor(
-    req: Request,
+    event: Request,
     env: E["Bindings"],
-    executionCtx: ExecutionCtx,
+    context: ExecutionContext,
     discord: DiscordEnv,
     interaction: D,
-    key: string
   ) {
-    super(env, executionCtx, discord, key);
-    this.#req = req;
+    super(event, env, context, discord);
     this.#interaction = interaction;
   }
 
-  /**
-   * raw Request
-   */
-  get req(): Request {
-    return this.#req;
-  }
+
   /**
    * [Interaction Object](https://discord.com/developers/docs/interactions/receiving-and-responding#interaction-object)
    */
@@ -192,14 +175,18 @@ abstract class Context235<
   #DISCORD_APPLICATION_ID: string | undefined;
   #flags: { flags?: number } = {};
   constructor(
-    req: Request,
+    event: Request,
     env: E["Bindings"],
-    executionCtx: ExecutionCtx,
+    context: ExecutionContext,
     discord: DiscordEnv,
-    interaction: D,
-    key: string
+    interaction: D
   ) {
-    super(req, env, executionCtx, discord, interaction, key);
+    // event: FetchEvent,
+    // env: E["Bindings"],
+    // context: ExecutionContext,
+    // discord: DiscordEnv,
+    // interaction: D,
+    super(event, env, context, discord, interaction);
     this.#interactionToken = interaction.token;
     this.#interactionMessageId = interaction.message?.id;
     this.#DISCORD_APPLICATION_ID = discord.APPLICATION_ID;
@@ -267,7 +254,7 @@ abstract class Context235<
    * ```
    */
   resDefer = (handler?: (c: this) => Promise<unknown>) => {
-    if (handler) this.waitUntil(handler(this));
+    if (handler) this.executionCtx.waitUntil(handler(this));
     return this.res({}, 5);
   };
 
@@ -318,14 +305,13 @@ export class CommandContext<E extends Env = any> extends Context235<
 > {
   #sub = { group: "", command: "", string: "" };
   constructor(
-    req: Request,
+    event: Request,
     env: E["Bindings"],
-    executionCtx: ExecutionCtx,
+    executionCtx: ExecutionContext,
     discord: DiscordEnv,
-    interaction: InteractionData<2>,
-    key: string
+    interaction: InteractionData<2>
   ) {
-    super(req, env, executionCtx, discord, interaction, key);
+    super(event, env, executionCtx, discord, interaction);
     const { sub, options } = getOptions(interaction);
     this.#sub = sub;
     if (options) {
@@ -394,20 +380,18 @@ export class ComponentContext<
   ComponentInteractionData<T>
 > {
   constructor(
-    req: Request,
+    event: Request,
     env: E["Bindings"],
-    executionCtx: ExecutionCtx,
+    executionCtx: ExecutionContext,
     discord: DiscordEnv,
-    interaction: InteractionData<3>,
-    key: string
+    interaction: InteractionData<3>
   ) {
     super(
-      req,
+      event,
       env,
       executionCtx,
       discord,
-      interaction as ComponentInteractionData<T>,
-      key
+      interaction as ComponentInteractionData<T>
     );
     // @ts-expect-error
     this.set("custom_id", interaction.data?.custom_id);
@@ -425,7 +409,7 @@ export class ComponentContext<
    * @returns {Response}
    */
   resDeferUpdate = (handler?: (c: this) => Promise<unknown>) => {
-    if (handler) this.waitUntil(handler(this));
+    if (handler) this.executionCtx.waitUntil(handler(this));
     return this.res(undefined, 6);
   };
   /**
@@ -448,14 +432,13 @@ export class ModalContext<E extends Env = any> extends Context235<
   InteractionData<5>
 > {
   constructor(
-    req: Request,
+    event: Request,
     env: E["Bindings"],
-    executionCtx: ExecutionCtx,
+    executionCtx: ExecutionContext,
     discord: DiscordEnv,
     interaction: InteractionData<5>,
-    key: string
   ) {
-    super(req, env, executionCtx, discord, interaction, key);
+    super(event, env, executionCtx, discord, interaction);
     // @ts-expect-error
     this.set("custom_id", interaction.data?.custom_id);
     const modalRows = interaction.data?.components;
@@ -481,14 +464,13 @@ export class AutocompleteContext<E extends Env = any> extends Context2345<
   #sub = { group: "", command: "", string: "" };
   #focused: AutocompleteOption | undefined;
   constructor(
-    req: Request,
+    event: Request,
     env: E["Bindings"],
-    executionCtx: ExecutionCtx,
+    executionCtx: ExecutionContext,
     discord: DiscordEnv,
-    interaction: InteractionData<4>,
-    key: string
+    interaction: InteractionData<4>
   ) {
-    super(req, env, executionCtx, discord, interaction, key);
+    super(event, env, executionCtx, discord, interaction);
     const { sub, options } = getOptions(interaction);
     this.#sub = sub;
     if (options) {
@@ -547,25 +529,7 @@ export class AutocompleteContext<E extends Env = any> extends Context2345<
     });
 }
 
-export class CronContext<E extends Env = any> extends ContextAll<E> {
-  #cronEvent: ScheduledEvent;
-  constructor(
-    event: ScheduledEvent,
-    env: E["Bindings"],
-    executionCtx: ExecutionCtx,
-    discord: DiscordEnv,
-    key: string
-  ) {
-    super(env, executionCtx, discord, key);
-    this.#cronEvent = event;
-  }
-
-  /**
-   * Cron Event
-   */
-  get cronEvent(): ScheduledEvent {
-    return this.#cronEvent;
-  }
+export class CronContext<E extends Env = any> extends ContextAll<E, ScheduledEvent> {
 }
 
 const getOptions = (interaction: InteractionData<2 | 4>) => {

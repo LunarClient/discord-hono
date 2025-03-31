@@ -5,6 +5,8 @@ import {
 } from "discord-api-types/v10";
 import type {
   ExecutionContext,
+  ScheduledEvent,
+  Request,
 } from "@cloudflare/workers-types";
 import {
   AutocompleteContext,
@@ -137,7 +139,7 @@ abstract class DiscordHonoBase<E extends Env> {
     return this;
   };
 
-  fetch = async (request: Request, env: E["Bindings"], ctx?: ExecutionContext) => {
+  fetch = async (request: Request, env: E["Bindings"], ctx: ExecutionContext) => {
     storedEnv = env;
 
     if (request.method === "GET") {
@@ -174,27 +176,27 @@ abstract class DiscordHonoBase<E extends Env> {
         return new ResponseJson({ type: 1 } as APIInteractionResponsePong);
       }
       case InteractionType.ApplicationCommand: {
-        const { handler, interaction, key } = getHandler(
+        const { handler, interaction } = getHandler(
           this.#commandMap,
           data as InteractionCommandData
         );
 
         return await handler(
-          new CommandContext(request, env, ctx, discord, interaction, key)
+          new CommandContext(request, env, ctx, discord, interaction)
         );
       }
       case InteractionType.MessageComponent: {
-        const { handler, interaction, key } = getHandler(
+        const { handler, interaction } = getHandler(
           this.#componentMap,
           data as InteractionComponentData
         );
 
         return await handler(
-          new ComponentContext(request, env, ctx, discord, interaction, key)
+          new ComponentContext(request, env, ctx, discord, interaction)
         );
       }
       case InteractionType.ApplicationCommandAutocomplete: {
-        const { handler, interaction, key } = getHandler(
+        const { handler, interaction } = getHandler(
           this.#autocompleteMap,
           data as InteractionAutocompleteData
         );
@@ -204,18 +206,17 @@ abstract class DiscordHonoBase<E extends Env> {
             env,
             ctx,
             discord,
-            interaction,
-            key
+            interaction
           )
         );
       }
       case InteractionType.ModalSubmit: {
-        const { handler, interaction, key } = getHandler(
+        const { handler, interaction } = getHandler(
           this.#modalMap,
           data as InteractionModalData
         );
         return await handler(
-          new ModalContext(request, env, ctx, discord, interaction, key)
+          new ModalContext(request, env, ctx, discord, interaction)
         );
       }
     }
@@ -223,7 +224,7 @@ abstract class DiscordHonoBase<E extends Env> {
     return new Response("Unknown Interaction Type", { status: 400 });
   }
 
-  scheduled = async (event: ScheduledEvent, env: E["Bindings"], ctx?: ExecutionContext) => {
+  scheduled = async (event: ScheduledEvent, env: E["Bindings"], ctx: ExecutionContext) => {
     storedEnv = env;
 
     const discord = this.#discord(env);
@@ -233,7 +234,7 @@ abstract class DiscordHonoBase<E extends Env> {
       throw new Error(`Cron handler not found for ${event.cron}`);
     }
 
-    const c = new CronContext(event, env, ctx, discord, event.cron);
+    const c = new CronContext(event, env, ctx, discord);
     if (ctx?.waitUntil) ctx.waitUntil(handler(c));
     else {
       console.log("The process does not apply waitUntil");
@@ -261,7 +262,7 @@ const getHandler = <
 >(
   map: RegexMap<string | RegExp, H>,
   interaction: C
-): { handler: H; interaction: C; key: string } => {
+): { handler: H; interaction: C } => {
   if (!interaction.data) {
     throw new Error("Interaction data is missing");
   }
@@ -292,7 +293,6 @@ const getHandler = <
   return {
     handler,
     interaction,
-    key,
   }
 };
 
