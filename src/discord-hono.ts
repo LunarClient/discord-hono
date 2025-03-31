@@ -248,7 +248,7 @@ abstract class DiscordHonoBase<E extends Env> {
  * @returns Context object with bindings and Discord environment
  */
 export const getBindings = <E extends Env>() => {
-  const typedStoredEnv = storedEnv as E | undefined
+  const typedStoredEnv = storedEnv as E["Bindings"] | undefined
   if (!typedStoredEnv) {
     throw new Error('getBindings() called before any handler received environment bindings');
   }
