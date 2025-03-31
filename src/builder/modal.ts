@@ -12,7 +12,7 @@ export class Modal {
    * @param {string} title
    */
   constructor(unique_id: string, title: string) {
-    this.#uniqueStr = `${unique_id};`;
+    this.#uniqueStr = unique_id;
     this.#data = { title, custom_id: this.#uniqueStr, components: [] };
   }
   /**

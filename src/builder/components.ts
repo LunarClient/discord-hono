@@ -86,7 +86,7 @@ export class Button<
       SKU: 6,
     } as const;
     const style = styleNum[button_style] || 1;
-    const custom_id = `${str};`;
+    const custom_id = str;
     let obj: APIButtonComponent;
     switch (style) {
       case 5:
@@ -163,7 +163,7 @@ export class Select<
       Channel: 8,
     } as const;
     const type = typeNum[select_type] || 3;
-    const custom_id = `${unique_id};`;
+    const custom_id = unique_id;
     super({ type, custom_id } as SelectComponent);
     this.#type = select_type;
     this.#uniqueStr = custom_id;
@@ -213,15 +213,15 @@ export class Select<
     ...e: T extends "String"
       ? undefined[]
       : {
-          id: string;
-          type: T extends "User"
-            ? "user"
-            : T extends "Role"
-            ? "role"
-            : T extends "Channel"
-            ? "channel"
-            : "user" | "role";
-        }[]
+        id: string;
+        type: T extends "User"
+        ? "user"
+        : T extends "Role"
+        ? "role"
+        : T extends "Channel"
+        ? "channel"
+        : "user" | "role";
+      }[]
   ) =>
     this.#assign("default_values", ["User", "Role", "Channel", "Mentionable"], {
       // @ts-expect-error

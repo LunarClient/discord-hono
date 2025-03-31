@@ -26,6 +26,7 @@ export const verify = async (
   publicKey: string
 ) => {
   if (!body || !signature || !timestamp) return false;
+
   return await crypto.subtle.verify(
     "NODE-ED25519",
     await key(publicKey),
@@ -33,3 +34,4 @@ export const verify = async (
     new TextEncoder().encode(timestamp + body)
   );
 };
+

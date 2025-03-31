@@ -1,5 +1,4 @@
 import type {
-  APIApplicationCommandAutocompleteInteraction,
   APIApplicationCommandInteractionDataIntegerOption,
   APIApplicationCommandInteractionDataNumberOption,
   APIApplicationCommandInteractionDataOption,
@@ -24,6 +23,7 @@ import type {
   Env,
   FetchEventLike,
   FileData,
+  InteractionAutocompleteData,
   InteractionCommandData,
   InteractionComponentData,
   InteractionModalData,
@@ -38,6 +38,7 @@ import {
   formData,
   prepareData,
 } from "./utils";
+import { ExecutionContext } from "@cloudflare/workers-types";
 
 type ExecutionCtx = FetchEventLike | ExecutionContext | undefined;
 
@@ -122,9 +123,9 @@ abstract class ContextAll<E extends Env> {
    */
   get var(): Readonly<
     ContextVariableMap &
-      (IsAny<E["Variables"]> extends true
-        ? Record<string, any>
-        : E["Variables"])
+    (IsAny<E["Variables"]> extends true
+      ? Record<string, any>
+      : E["Variables"])
   > {
     return { ...this.#var } as never;
   }
@@ -135,7 +136,7 @@ type InteractionData<T extends 2 | 3 | 4 | 5> = T extends 2
   : T extends 3
   ? InteractionComponentData
   : T extends 4
-  ? APIApplicationCommandAutocompleteInteraction
+  ? InteractionAutocompleteData
   : T extends 5
   ? InteractionModalData
   : InteractionCommandData;
@@ -283,8 +284,7 @@ abstract class Context235<
   followup = (data: CustomCallbackData = {}, file?: FileData, retry = 0) => {
     if (!this.#DISCORD_APPLICATION_ID) throw errorDev("DISCORD_APPLICATION_ID");
     return fetch429Retry(
-      `${apiUrl}/webhooks/${this.#DISCORD_APPLICATION_ID}/${
-        this.#interactionToken
+      `${apiUrl}/webhooks/${this.#DISCORD_APPLICATION_ID}/${this.#interactionToken
       }`,
       {
         method: "POST",
@@ -305,8 +305,7 @@ abstract class Context235<
     if (!this.#DISCORD_APPLICATION_ID) throw errorDev("DISCORD_APPLICATION_ID");
     if (!this.#interactionMessageId) throw errorSys("Message Id");
     return fetch429Retry(
-      `${apiUrl}/webhooks/${this.#DISCORD_APPLICATION_ID}/${
-        this.#interactionToken
+      `${apiUrl}/webhooks/${this.#DISCORD_APPLICATION_ID}/${this.#interactionToken
       }/messages/${this.#interactionMessageId}`,
       { method: "DELETE" }
     );
@@ -372,21 +371,21 @@ type ComponentType = "Button" | "Select" | "Other Select" | unknown;
 
 type ComponentInteractionData<T extends ComponentType> = T extends "Button"
   ? APIBaseInteraction<
-      InteractionType.MessageComponent,
-      APIMessageButtonInteractionData
-    >
+    InteractionType.MessageComponent,
+    APIMessageButtonInteractionData
+  >
   : T extends "Select"
   ? APIBaseInteraction<
-      InteractionType.MessageComponent,
-      APIMessageStringSelectInteractionData
-    >
+    InteractionType.MessageComponent,
+    APIMessageStringSelectInteractionData
+  >
   : APIBaseInteraction<
-      InteractionType.MessageComponent,
-      | APIMessageUserSelectInteractionData
-      | APIMessageRoleSelectInteractionData
-      | APIMessageMentionableSelectInteractionData
-      | APIMessageChannelSelectInteractionData
-    >;
+    InteractionType.MessageComponent,
+    | APIMessageUserSelectInteractionData
+    | APIMessageRoleSelectInteractionData
+    | APIMessageMentionableSelectInteractionData
+    | APIMessageChannelSelectInteractionData
+  >;
 export class ComponentContext<
   E extends Env = any,
   T extends ComponentType = unknown

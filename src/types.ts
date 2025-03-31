@@ -54,10 +54,6 @@ export type Verify = (
   timestamp: string | null,
   publicKey: string
 ) => Promise<boolean> | boolean;
-export type InitOptions<E extends Env> = {
-  verify?: Verify;
-  discordEnv?: (env: E["Bindings"]) => DiscordEnv;
-};
 
 ////////// FetchEventLike //////////
 
@@ -82,6 +78,10 @@ export type InteractionModalData = APIBaseInteraction<
   InteractionType.ModalSubmit,
   APIModalSubmission
 >;
+export type InteractionAutocompleteData = APIBaseInteraction<
+  InteractionType.ApplicationCommandAutocomplete,
+  APIApplicationCommandInteractionData
+>;
 
 export type CustomCallbackBase =
   | APIInteractionResponseCallbackData
@@ -91,9 +91,9 @@ export type CustomCallbackData<
   T extends CustomCallbackBase = APIInteractionResponseCallbackData
 > =
   | (Omit<T, "components" | "embeds"> & {
-      components?: Components | T["components"];
-      embeds?: (Embed | EmbedBuilder | APIEmbed)[] | null;
-    })
+    components?: Components | T["components"];
+    embeds?: (Embed | EmbedBuilder | APIEmbed)[] | null;
+  })
   | string;
 
 ////////// FileData //////////
